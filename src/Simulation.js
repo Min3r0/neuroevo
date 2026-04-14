@@ -7,11 +7,12 @@ export class Simulation {
       preyCount: cfg.preyCount ?? 40,
       predCount: cfg.predCount ?? 15,
       genDuration: cfg.genDuration ?? 25,
-      foodSpawnRate: cfg.foodSpawnRate ?? 0.4,
+      foodSpawnRate: cfg.foodSpawnRate ?? 1.2,
       eliteRatio: cfg.eliteRatio ?? 0.20,
       mutationRate: cfg.mutationRate ?? 0.05,
       mutationStd: cfg.mutationStd ?? 0.15,
       maxPredators: cfg.maxPredators ?? 40,
+      maxPrey: cfg.maxPrey ?? 80,
       W: cfg.W ?? 700,
       H: cfg.H ?? 500,
     };
@@ -39,7 +40,7 @@ export class Simulation {
   }
 
   tick(dt) {
-    const { W, H, genDuration, foodSpawnRate, maxPredators } = this.cfg;
+    const { W, H, genDuration, foodSpawnRate, maxPredators, maxPrey } = this.cfg;
 
     // Spawn food
     if (Math.random() < foodSpawnRate * dt) {
@@ -50,23 +51,42 @@ export class Simulation {
     // Snapshot so mid-tick births don't run this tick
     const snapshot = this.agents.slice();
     const currentPredCount = snapshot.filter(a => a.type === 'predator' && a.alive).length;
+    const currentPreyCount = snapshot.filter(a => a.type === 'prey' && a.alive).length;
 
     for (const agent of snapshot) {
       if (!agent.alive) continue;
       const result = agent.update(this.agents, this.foods, W, H, dt);
       if (result?.eaten != null) this.foods.splice(result.eaten, 1);
 
+      // Live reproduction: prey ate while already full
+      if (result?.reproduce && agent.type === 'prey' && currentPreyCount < maxPrey) {
+        const childBrain = agent.brain.clone();
+        childBrain.mutate(0.08, 0.12);
+        const offsetAngle = Math.random() * Math.PI * 2;
+        const child = new Agent(
+            'prey',
+            ((agent.x + Math.cos(offsetAngle) * 18 + W) % W),
+            ((agent.y + Math.sin(offsetAngle) * 18 + H) % H),
+            childBrain
+        );
+        child.energy = 0.5;
+        child.angle = agent.angle + (Math.random() - 0.5) * 0.8;
+        this.agents.push(child);
+        this.birthEvents.push({ x: agent.x, y: agent.y, ttl: 0.7 });
+        this.totalBirths++;
+      }
+
       // Live reproduction: predator ate while already full
-      if (result?.reproduce && currentPredCount < maxPredators) {
+      if (result?.reproduce && agent.type === 'predator' && currentPredCount < maxPredators) {
         const childBrain = agent.brain.clone();
         childBrain.mutate(0.08, 0.12);
 
         const offsetAngle = Math.random() * Math.PI * 2;
         const child = new Agent(
-          'predator',
-          ((agent.x + Math.cos(offsetAngle) * 22 + W) % W),
-          ((agent.y + Math.sin(offsetAngle) * 22 + H) % H),
-          childBrain
+            'predator',
+            ((agent.x + Math.cos(offsetAngle) * 22 + W) % W),
+            ((agent.y + Math.sin(offsetAngle) * 22 + H) % H),
+            childBrain
         );
         child.energy = 0.5;
         child.angle = agent.angle + (Math.random() - 0.5) * 0.8;

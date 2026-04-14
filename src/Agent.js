@@ -93,10 +93,15 @@ export class Agent {
 
     // Eat food
     let eaten = null;
+    let reproduce = false;
     if (this.type === 'prey') {
       for (let i = foods.length - 1; i >= 0; i--) {
         if (dist(this, foods[i]) < this.r + 4) {
-          this.energy = Math.min(1, this.energy + 0.25);
+          this.energy += 0.25;
+          if (this.energy > 1.0) {
+            reproduce = true;
+            this.energy = 1.0;
+          }
           this.foodEaten++;
           eaten = i;
           break;
@@ -106,7 +111,6 @@ export class Agent {
 
     // Hunt
     let killed = null;
-    let reproduce = false;
     if (this.type === 'predator') {
       for (const prey of agents) {
         if (prey.alive && prey.type === 'prey' && dist(this, prey) < this.r + prey.r) {

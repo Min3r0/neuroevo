@@ -20,11 +20,11 @@
       --text: #e6edf3;
       --muted: rgba(230,237,243,0.45);
       --canvas-bg: #0d1117;
-      --font: 'Space Grotesk', sans-serif;
-      --mono: 'JetBrains Mono', monospace;
+      --font: 'Space Grotesk', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Courier New', monospace;
     }
 
-    :root.light {
+    html.light {
       --bg: #f4f3ef;
       --surface: #ffffff;
       --surface2: #eceae4;
@@ -136,7 +136,7 @@
     #progress-bar {
       height: 100%;
       background: linear-gradient(90deg, var(--prey), var(--gold));
-      width: 0%;
+      width: 0;
       transition: width 0.1s linear;
     }
 
@@ -298,7 +298,7 @@
     <div class="header-controls">
       <div class="speed-wrap">
         Vitesse
-        <input type="range" id="speed-slider" min="1" max="10" value="1" step="1">
+        <input type="range" id="speed-slider" min="1" max="10" value="1" step="1" aria-label="Vitesse de simulation">
         <span id="speed-label">×1</span>
       </div>
       <button class="btn" id="btn-theme" title="Changer le thème">☀︎</button>
@@ -380,29 +380,29 @@
 
       <div class="param-row">
         <label>Nb. proies</label>
-        <input type="range" id="prey-count" min="10" max="80" value="40" step="5">
+        <input type="range" id="prey-count" min="10" max="80" value="40" step="5" aria-label="Nombre de proies">
         <span class="val" id="prey-count-val">40</span>
       </div>
       <div class="param-row">
         <label>Nb. prédateurs</label>
-        <input type="range" id="pred-count" min="5" max="30" value="15" step="1">
+        <input type="range" id="pred-count" min="5" max="30" value="15" step="1" aria-label="Nombre de prédateurs">
         <span class="val" id="pred-count-val">15</span>
       </div>
       <div class="param-row">
         <label>Taux mutation</label>
-        <input type="range" id="mutation-rate" min="0.01" max="0.3" value="0.05" step="0.01">
+        <input type="range" id="mutation-rate" min="0.01" max="0.3" value="0.05" step="0.01" aria-label="Taux de mutation">
         <span class="val" id="mutation-rate-val">0.05</span>
       </div>
       <div class="param-row">
         <label>Ratio élite</label>
-        <input type="range" id="elite-ratio" min="0.05" max="0.5" value="0.2" step="0.05">
+        <input type="range" id="elite-ratio" min="0.05" max="0.5" value="0.2" step="0.05" aria-label="Ratio élite">
         <span class="val" id="elite-ratio-val">0.2</span>
       </div>
       <div class="param-row" style="margin-top:4px">
         <label>Obstacles</label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
           <span class="toggle-track">
-            <input type="checkbox" id="toggle-obstacles">
+            <input type="checkbox" id="toggle-obstacles" aria-label="Activer les obstacles">
             <span class="toggle-thumb"></span>
           </span>
           <span class="val" id="obstacles-val" style="min-width:auto">Off</span>
@@ -417,7 +417,6 @@
   // Sync sidebar stat cards with header (they share same IDs via JS)
   // Fix: duplicate stat IDs → map sidebar cards to same data
   const syncIds = [['stat-gen2','stat-gen'], ['stat-prey2','stat-prey'], ['stat-pred2','stat-pred'], ['stat-time2','stat-time']];
-  const _origUpdateStats = window._origUpdateStats;
   const observer = new MutationObserver(() => {
     syncIds.forEach(([dst, src]) => {
       const s = document.getElementById(src), d = document.getElementById(dst);

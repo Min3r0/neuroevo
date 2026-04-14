@@ -158,8 +158,8 @@ La barre de progression en haut de l'arène indique l'avancement de la générat
 - [x] Visualisation du réseau de neurones en temps réel
 - [x] Graphiques d'évolution du fitness
 - [x] Paramètres ajustables à la volée
-- [ ] **Reproduction en direct** — si un prédateur mange une proie et que son énergie dépasse 100 %, il engendre un enfant (clone muté) qui naît à 50 % d'énergie, sans attendre la fin de la génération
-- [ ] Obstacles dans l'arène
+- [x] **Reproduction en direct** — si un prédateur mange une proie et que son énergie dépasse 100 %, il engendre un enfant (clone muté) qui naît à 50 % d'énergie, sans attendre la fin de la génération
+- [x] Obstacles dans l'arène
 - [ ] Sauvegarde / chargement d'une population (JSON)
 - [ ] Plusieurs espèces de proies
 - [ ] Mode headless (simulation sans rendu, plus rapide)

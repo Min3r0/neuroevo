@@ -75,8 +75,9 @@ export class Agent {
     this.x = ((this.x % W) + W) % W;
     this.y = ((this.y % H) + H) % H;
 
-    // Energy drain
-    this.energy -= (0.0003 + this.speed * 0.0002) * dt * 60;
+    // Energy drain (prédateurs plus gourmands)
+    const baseDrain = this.type === 'predator' ? 0.0006 : 0.0003;
+    this.energy -= (baseDrain + this.speed * 0.0002) * dt * 60;
     this.age += dt;
 
     // Trail
@@ -111,7 +112,7 @@ export class Agent {
           this.kills++;
           killed = prey;
           // Energy can overflow past 1.0 — excess triggers reproduction
-          this.energy += 0.5;
+          this.energy += 0.3;
           if (this.energy > 1.0) {
             reproduce = true;
             this.energy = 1.0; // parent redescend à 100 %

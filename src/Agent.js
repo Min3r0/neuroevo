@@ -18,6 +18,7 @@ export class Agent {
     this.r = type === 'prey' ? 5 : 7;
     this.kills = 0;
     this.foodEaten = 0;
+    this.reproductions = 0;
   }
 
   sense(agents, foods, W, H) {
@@ -118,6 +119,7 @@ export class Agent {
           if (this.energy > 1.0) {
             reproduce = true;
             this.energy = 1.0;
+            this.reproductions++;
           }
           this.foodEaten++;
           eaten = i;
@@ -139,6 +141,7 @@ export class Agent {
           if (this.energy > 1.0) {
             reproduce = true;
             this.energy = 1.0; // parent redescend à 100 %
+            this.reproductions++;
           }
           break;
         }
@@ -150,9 +153,9 @@ export class Agent {
 
   computeFitness() {
     if (this.type === 'prey') {
-      this.fitness = this.age * 8 + this.foodEaten * 5;
+      this.fitness = this.age * 8 + this.foodEaten * 5 + this.reproductions * 15;
     } else {
-      this.fitness = this.kills * 20 + this.age * 2;
+      this.fitness = this.kills * 20 + this.age * 2 + this.reproductions * 25;
     }
     return this.fitness;
   }

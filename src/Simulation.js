@@ -11,6 +11,7 @@ export class Simulation {
       eliteRatio: cfg.eliteRatio ?? 0.20,
       mutationRate: cfg.mutationRate ?? 0.05,
       mutationStd: cfg.mutationStd ?? 0.15,
+      maxPredators: cfg.maxPredators ?? 40,
       W: cfg.W ?? 700,
       H: cfg.H ?? 500,
     };
@@ -21,6 +22,8 @@ export class Simulation {
     this.foods = [];
     this.history = [];
     this.selectedAgent = null;
+    this.birthEvents = [];
+    this.totalBirths = 0;
     this._init();
   }
 
@@ -32,10 +35,11 @@ export class Simulation {
     this.foods = [];
     for (let i = 0; i < 30; i++) this.foods.push({ x: Math.random() * W, y: Math.random() * H });
     this.time = 0;
+    this.birthEvents = [];
   }
 
   tick(dt) {
-    const { W, H, genDuration, foodSpawnRate } = this.cfg;
+    const { W, H, genDuration, foodSpawnRate, maxPredators } = this.cfg;
 
     // Spawn food
     if (Math.random() < foodSpawnRate * dt) {
@@ -43,16 +47,44 @@ export class Simulation {
       if (this.foods.length > 80) this.foods.shift();
     }
 
-    // Update agents
-    for (const agent of this.agents) {
+    // Snapshot so mid-tick births don't run this tick
+    const snapshot = this.agents.slice();
+    const currentPredCount = snapshot.filter(a => a.type === 'predator' && a.alive).length;
+
+    for (const agent of snapshot) {
       if (!agent.alive) continue;
       const result = agent.update(this.agents, this.foods, W, H, dt);
       if (result?.eaten != null) this.foods.splice(result.eaten, 1);
+
+      // Live reproduction: predator ate while already full
+      if (result?.reproduce && currentPredCount < maxPredators) {
+        const childBrain = agent.brain.clone();
+        childBrain.mutate(0.08, 0.12);
+
+        const offsetAngle = Math.random() * Math.PI * 2;
+        const child = new Agent(
+          'predator',
+          ((agent.x + Math.cos(offsetAngle) * 22 + W) % W),
+          ((agent.y + Math.sin(offsetAngle) * 22 + H) % H),
+          childBrain
+        );
+        child.energy = 0.5;
+        child.angle = agent.angle + (Math.random() - 0.5) * 0.8;
+        this.agents.push(child);
+
+        this.birthEvents.push({ x: agent.x, y: agent.y, ttl: 0.7 });
+        this.totalBirths++;
+      }
+    }
+
+    // Decay birth events
+    for (let i = this.birthEvents.length - 1; i >= 0; i--) {
+      this.birthEvents[i].ttl -= dt;
+      if (this.birthEvents[i].ttl <= 0) this.birthEvents.splice(i, 1);
     }
 
     this.time += dt;
 
-    // Next generation
     if (this.time >= genDuration) {
       this._nextGeneration();
     }
@@ -72,6 +104,7 @@ export class Simulation {
       predBest: predEvo.bestFitness,
       preyAlive: this.agents.filter(a => a.type === 'prey' && a.alive).length,
       predAlive: this.agents.filter(a => a.type === 'predator' && a.alive).length,
+      births: this.totalBirths,
     });
 
     this.generation++;
@@ -80,6 +113,8 @@ export class Simulation {
     for (let i = 0; i < 30; i++) this.foods.push({ x: Math.random() * W, y: Math.random() * H });
     this.time = 0;
     this.selectedAgent = null;
+    this.birthEvents = [];
+    this.totalBirths = 0;
   }
 
   get preyAlive() { return this.agents.filter(a => a.type === 'prey' && a.alive).length; }

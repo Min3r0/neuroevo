@@ -54,6 +54,23 @@ export class Renderer {
       this._drawAgent(ctx, a, selected);
     }
 
+    // Birth flash events
+    for (const ev of sim.birthEvents) {
+      const progress = 1 - ev.ttl / 0.7;
+      const radius = 10 + progress * 28;
+      const alpha = (1 - progress) * 0.8;
+      ctx.beginPath();
+      ctx.arc(ev.x, ev.y, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,200,60,${alpha})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Inner glow
+      ctx.beginPath();
+      ctx.arc(ev.x, ev.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,220,80,${alpha})`;
+      ctx.fill();
+    }
+
     // Selection highlight
     if (sim.selectedAgent?.alive) {
       const a = sim.selectedAgent;

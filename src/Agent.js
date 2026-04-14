@@ -103,19 +103,25 @@ export class Agent {
 
     // Hunt
     let killed = null;
+    let reproduce = false;
     if (this.type === 'predator') {
       for (const prey of agents) {
         if (prey.alive && prey.type === 'prey' && dist(this, prey) < this.r + prey.r) {
           prey.alive = false;
-          this.energy = Math.min(1, this.energy + 0.5);
           this.kills++;
           killed = prey;
+          // Energy can overflow past 1.0 — excess triggers reproduction
+          this.energy += 0.5;
+          if (this.energy > 1.0) {
+            reproduce = true;
+            this.energy = 1.0; // parent redescend à 100 %
+          }
           break;
         }
       }
     }
 
-    return { eaten, killed };
+    return { eaten, killed, reproduce };
   }
 
   computeFitness() {

@@ -80,6 +80,7 @@ function updateStats() {
   document.getElementById('stat-prey').textContent = sim.preyAlive;
   document.getElementById('stat-pred').textContent = sim.predAlive;
   document.getElementById('stat-time').textContent = sim.time.toFixed(1) + 's';
+  document.getElementById('stat-live-births').textContent = sim.totalBirths;
   document.getElementById('progress-bar').style.width = (sim.progress * 100).toFixed(1) + '%';
 
   if (last) {
@@ -87,6 +88,7 @@ function updateStats() {
     document.getElementById('stat-pred-fit').textContent = last.predAvg.toFixed(1);
     document.getElementById('stat-prey-best').textContent = last.preyBest.toFixed(1);
     document.getElementById('stat-pred-best').textContent = last.predBest.toFixed(1);
+    document.getElementById('stat-births').textContent = last.births ?? 0;
   }
 }
 

@@ -9,16 +9,21 @@ export class Renderer {
     this.canvas.height = H;
   }
 
+  _isLight() {
+    return document.documentElement.classList.contains('light');
+  }
+
   draw(sim) {
     const ctx = this.ctx;
     const { W, H } = sim.cfg;
+    const light = this._isLight();
 
     // Background
-    ctx.fillStyle = '#0d1117';
+    ctx.fillStyle = light ? '#e8e6df' : '#0d1117';
     ctx.fillRect(0, 0, W, H);
 
     // Grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.strokeStyle = light ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
     for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
@@ -38,7 +43,9 @@ export class Renderer {
     // Trails
     for (const a of sim.agents) {
       if (!a.alive || a.trail.length < 2) continue;
-      const color = a.type === 'prey' ? '80,220,120' : '220,80,80';
+      const color = light
+          ? (a.type === 'prey' ? '22,163,74' : '220,38,38')
+          : (a.type === 'prey' ? '80,220,120' : '220,80,80');
       ctx.beginPath();
       ctx.moveTo(a.trail[0].x, a.trail[0].y);
       for (let i = 1; i < a.trail.length; i++) ctx.lineTo(a.trail[i].x, a.trail[i].y);
@@ -98,8 +105,8 @@ export class Renderer {
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(
-      a.x + Math.cos(a.angle) * (a.r + 5),
-      a.y + Math.sin(a.angle) * (a.r + 5)
+        a.x + Math.cos(a.angle) * (a.r + 5),
+        a.y + Math.sin(a.angle) * (a.r + 5)
     );
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
     ctx.lineWidth = 1.5;
@@ -109,17 +116,26 @@ export class Renderer {
     const bw = a.r * 2.4;
     const bx = a.x - bw / 2;
     const by = a.y - a.r - 7;
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillStyle = light ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.5)';
     ctx.fillRect(bx, by, bw, 3);
     ctx.fillStyle = a.energy > 0.4 ? '#4ade80' : '#f87171';
     ctx.fillRect(bx, by, bw * a.energy, 3);
   }
 
   _energyColor(e, isPrey) {
+    const light = this._isLight();
     if (isPrey) {
+      if (light) {
+        const g = Math.round(100 + e * 60);
+        return `rgb(10,${g},30)`;
+      }
       const g = Math.round(120 + e * 100);
       return `rgb(40,${g},60)`;
     } else {
+      if (light) {
+        const r = Math.round(160 + e * 60);
+        return `rgb(${r},20,20)`;
+      }
       const r = Math.round(140 + e * 80);
       return `rgb(${r},40,40)`;
     }
@@ -129,7 +145,8 @@ export class Renderer {
     if (!brain || !canvas) return;
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
-    ctx.fillStyle = '#0d1117';
+    const light = document.documentElement.classList.contains('light');
+    ctx.fillStyle = light ? '#e8e6df' : '#0d1117';
     ctx.fillRect(0, 0, W, H);
 
     const layers = brain.layerSizes;
@@ -190,7 +207,7 @@ export class Renderer {
         ctx.arc(x, y, 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.strokeStyle = light ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 1;
         ctx.stroke();
       }

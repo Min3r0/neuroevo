@@ -39,11 +39,18 @@ document.getElementById('speed-slider').addEventListener('input', e => {
 });
 
 function applyParams() {
-  sim.cfg.preyCount        = +document.getElementById('prey-count').value;
-  sim.cfg.predCount        = +document.getElementById('pred-count').value;
+  sim.cfg.preyCount         = +document.getElementById('prey-count').value;
+  sim.cfg.predCount         = +document.getElementById('pred-count').value;
   sim.genetics.mutationRate = +document.getElementById('mutation-rate').value;
   sim.genetics.eliteRatio   = +document.getElementById('elite-ratio').value;
 }
+
+// Obstacles toggle
+document.getElementById('toggle-obstacles').addEventListener('change', e => {
+  const on = e.target.checked;
+  document.getElementById('obstacles-val').textContent = on ? 'On' : 'Off';
+  sim.setObstacles(on);
+});
 
 // Click to select agent
 arenaCanvas.addEventListener('click', e => {

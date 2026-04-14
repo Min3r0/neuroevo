@@ -36,6 +36,18 @@ export class Renderer {
     for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
+    // Obstacles
+    for (const obs of sim.obstacles) {
+      const light = this._isLight();
+      ctx.fillStyle = light ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.12)';
+      ctx.strokeStyle = light ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
+      ctx.fill();
+      ctx.stroke();
+    }
+
     // Food
     for (const f of sim.foods) {
       ctx.beginPath();

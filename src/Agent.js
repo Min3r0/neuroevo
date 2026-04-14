@@ -53,7 +53,7 @@ export class Agent {
     return inputs;
   }
 
-  update(agents, foods, W, H, dt) {
+  update(agents, foods, W, H, dt, obstacles = []) {
     if (!this.alive) return null;
 
     const inputs = this.sense(agents, foods, W, H);
@@ -76,6 +76,23 @@ export class Agent {
     if (this.x > W - this.r) { this.x = W - this.r; this.angle = Math.PI - this.angle; }
     if (this.y < this.r) { this.y = this.r; this.angle = -this.angle; }
     if (this.y > H - this.r) { this.y = H - this.r; this.angle = -this.angle; }
+
+    // Collision obstacles
+    for (const obs of obstacles) {
+      const nearX = Math.max(obs.x, Math.min(this.x, obs.x + obs.w));
+      const nearY = Math.max(obs.y, Math.min(this.y, obs.y + obs.h));
+      const dx = this.x - nearX, dy = this.y - nearY;
+      const d  = Math.sqrt(dx * dx + dy * dy);
+      if (d < this.r) {
+        // Repousser hors de l'obstacle
+        const nx = dx / (d || 1), ny = dy / (d || 1);
+        this.x = nearX + nx * this.r;
+        this.y = nearY + ny * this.r;
+        // Rebond : réfléchir l'angle selon la normale
+        const dot = Math.cos(this.angle) * nx + Math.sin(this.angle) * ny;
+        this.angle -= 2 * dot * Math.atan2(ny, nx);
+      }
+    }
 
     // Energy drain (prédateurs plus gourmands)
     const baseDrain = this.type === 'predator' ? 0.0006 : 0.0003;

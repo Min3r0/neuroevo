@@ -13,6 +13,7 @@ export class Simulation {
       mutationStd:  cfg.mutationStd  ?? 0.15,
       maxPredators: cfg.maxPredators ?? 40,
       maxPrey:      cfg.maxPrey      ?? 80,
+      obstaclesEnabled: cfg.obstaclesEnabled ?? false,
       W: cfg.W ?? 700,
       H: cfg.H ?? 500,
     };
@@ -37,6 +38,24 @@ export class Simulation {
     for (let i = 0; i < 30; i++) this.foods.push({ x: Math.random() * W, y: Math.random() * H });
     this.time        = 0;
     this.birthEvents = [];
+    this.obstacles   = this.cfg.obstaclesEnabled ? this._generateObstacles() : [];
+  }
+
+  _generateObstacles() {
+    const { W, H } = this.cfg;
+    const obs = [];
+    const candidates = [
+      { x: W*0.2, y: H*0.15, w: 80, h: 18 },
+      { x: W*0.6, y: H*0.15, w: 80, h: 18 },
+      { x: W*0.1, y: H*0.45, w: 18, h: 90 },
+      { x: W*0.75,y: H*0.40, w: 18, h: 90 },
+      { x: W*0.35,y: H*0.65, w: 110,h: 18 },
+      { x: W*0.55,y: H*0.30, w: 18, h: 70 },
+    ];
+    for (const c of candidates) {
+      obs.push({ x: Math.round(c.x), y: Math.round(c.y), w: c.w, h: c.h });
+    }
+    return obs;
   }
 
   // Clamp position inside the arena (bords physiques, pas de wrap)
@@ -78,7 +97,7 @@ export class Simulation {
 
     for (const agent of snapshot) {
       if (!agent.alive) continue;
-      const result = agent.update(this.agents, this.foods, W, H, dt);
+      const result = agent.update(this.agents, this.foods, W, H, dt, this.obstacles);
       if (result?.eaten != null) this.foods.splice(result.eaten, 1);
 
       if (result?.reproduce) {
@@ -132,6 +151,11 @@ export class Simulation {
     this.selectedAgent = null;
     this.birthEvents   = [];
     this.totalBirths   = 0;
+  }
+
+  setObstacles(enabled) {
+    this.cfg.obstaclesEnabled = enabled;
+    this.obstacles = enabled ? this._generateObstacles() : [];
   }
 
   get preyAlive() { return this.agents.filter(a => a.type === 'prey'     && a.alive).length; }

@@ -71,9 +71,11 @@ export class Agent {
     this.x += Math.cos(this.angle) * this.speed * dt * 60;
     this.y += Math.sin(this.angle) * this.speed * dt * 60;
 
-    // Wrap
-    this.x = ((this.x % W) + W) % W;
-    this.y = ((this.y % H) + H) % H;
+    // Bords physiques — rebond
+    if (this.x < this.r) { this.x = this.r; this.angle = Math.PI - this.angle; }
+    if (this.x > W - this.r) { this.x = W - this.r; this.angle = Math.PI - this.angle; }
+    if (this.y < this.r) { this.y = this.r; this.angle = -this.angle; }
+    if (this.y > H - this.r) { this.y = H - this.r; this.angle = -this.angle; }
 
     // Energy drain (prédateurs plus gourmands)
     const baseDrain = this.type === 'predator' ? 0.0006 : 0.0003;

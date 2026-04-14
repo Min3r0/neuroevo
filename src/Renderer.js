@@ -14,7 +14,7 @@ export class Renderer {
   }
 
   _arenaBg() {
-    return this._isLight() ? '#6b3d1e' : '#0d1117';
+    return '#456e1c';
   }
 
   _panelBg() {

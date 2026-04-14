@@ -21,7 +21,7 @@ export class Agent {
     this.reproductions = 0;
   }
 
-  sense(agents, foods, W, H) {
+  sense(agents, foods) {
     // Find nearest 3 of opposite type
     const others = agents.filter(a => a.alive && a.type !== this.type);
     others.sort((a, b) => dist(this, a) - dist(this, b));
@@ -57,13 +57,12 @@ export class Agent {
   update(agents, foods, W, H, dt, obstacles = []) {
     if (!this.alive) return null;
 
-    const inputs = this.sense(agents, foods, W, H);
+    const inputs = this.sense(agents, foods);
     const out = this.brain.forward(inputs);
 
     // Outputs: speed, turn, action
     const targetSpeed = (Math.tanh(out[0]) + 1) / 2;
     const turn = Math.tanh(out[1]) * 0.12;
-    const action = out[2] > 0.5;
 
     this.speed += (targetSpeed - this.speed) * 0.15;
     this.speed = Math.min(this.speed, this.type === 'predator' ? 2.2 : 2.8);

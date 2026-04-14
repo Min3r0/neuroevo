@@ -106,7 +106,7 @@ function loop(ts) {
   renderer.draw(sim);
 
   if (sim.selectedAgent?.alive) {
-    const inputs = sim.selectedAgent.sense(sim.agents, sim.foods, sim.cfg.W, sim.cfg.H);
+    const inputs = sim.selectedAgent.sense(sim.agents, sim.foods);
     renderer.drawNeuralNet(netCanvas, sim.selectedAgent.brain, inputs);
     updateNetInfo();
   } else {

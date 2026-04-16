@@ -1,11 +1,12 @@
+import { CONFIG } from './config.js';
 import { NeuralNet } from './NeuralNet.js';
 import { Agent } from './Agent.js';
 
 export class Genetics {
   constructor(cfg) {
-    this.eliteRatio = cfg.eliteRatio ?? 0.20;
-    this.mutationRate = cfg.mutationRate ?? 0.05;
-    this.mutationStd = cfg.mutationStd ?? 0.15;
+    this.eliteRatio  = cfg.eliteRatio  ?? CONFIG.genetics.eliteRatio;
+    this.mutationRate = cfg.mutationRate ?? CONFIG.genetics.mutationRate;
+    this.mutationStd  = cfg.mutationStd  ?? CONFIG.genetics.mutationStd;
   }
 
   evolve(agents, type, popSize, W, H) {
@@ -38,7 +39,7 @@ export class Genetics {
     return { agents: newAgents, avgFitness, bestFitness };
   }
 
-  _tournamentSelect(pool, k = 3) {
+  _tournamentSelect(pool, k = CONFIG.genetics.tournamentSize) {
     let best = null;
     for (let i = 0; i < k; i++) {
       const candidate = pool[Math.floor(Math.random() * pool.length)];

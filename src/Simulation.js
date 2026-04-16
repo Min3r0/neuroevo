@@ -1,19 +1,20 @@
+import { CONFIG } from './config.js';
 import { Agent } from './Agent.js';
 import { Genetics } from './Genetics.js';
 
 export class Simulation {
   constructor(cfg) {
     this.cfg = {
-      preyCount:    cfg.preyCount    ?? 40,
-      predCount:    cfg.predCount    ?? 15,
-      genDuration:  cfg.genDuration  ?? 25,
-      foodSpawnRate: cfg.foodSpawnRate ?? 1.2,
-      eliteRatio:   cfg.eliteRatio   ?? 0.20,
-      mutationRate: cfg.mutationRate ?? 0.05,
-      mutationStd:  cfg.mutationStd  ?? 0.15,
-      maxPredators: cfg.maxPredators ?? 40,
-      maxPrey:      cfg.maxPrey      ?? 80,
-      obstaclesEnabled: cfg.obstaclesEnabled ?? false,
+      preyCount:    cfg.preyCount    ?? CONFIG.population.preyCount,
+      predCount:    cfg.predCount    ?? CONFIG.population.predCount,
+      genDuration:  cfg.genDuration  ?? CONFIG.time.genDuration,
+      foodSpawnRate: cfg.foodSpawnRate ?? CONFIG.food.spawnRate,
+      eliteRatio:   cfg.eliteRatio   ?? CONFIG.genetics.eliteRatio,
+      mutationRate: cfg.mutationRate ?? CONFIG.genetics.mutationRate,
+      mutationStd:  cfg.mutationStd  ?? CONFIG.genetics.mutationStd,
+      maxPredators: cfg.maxPredators ?? CONFIG.population.maxPredators,
+      maxPrey:      cfg.maxPrey      ?? CONFIG.population.maxPrey,
+      obstaclesEnabled: cfg.obstaclesEnabled ?? CONFIG.obstacles.enabled,
       W: cfg.W ?? 700,
       H: cfg.H ?? 500,
     };
@@ -71,11 +72,11 @@ export class Simulation {
     const offsetAngle = Math.random() * Math.PI * 2;
     const dist = type === 'predator' ? 22 : 18;
     const pos  = this._clampPos(
-        parent.x + Math.cos(offsetAngle) * dist,
-        parent.y + Math.sin(offsetAngle) * dist
+      parent.x + Math.cos(offsetAngle) * dist,
+      parent.y + Math.sin(offsetAngle) * dist
     );
     const childBrain = parent.brain.clone();
-    childBrain.mutate(0.08, 0.12);
+    childBrain.mutate(CONFIG.genetics.liveMutationRate, CONFIG.genetics.liveMutationStd);
     const child = new Agent(type, pos.x, pos.y, childBrain);
     child.energy = 0.5;
     child.angle  = parent.angle + (Math.random() - 0.5) * 0.8;

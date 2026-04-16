@@ -1,125 +1,134 @@
 import { NeuralNet } from './NeuralNet.js';
+import { CONFIG } from './config.js';
 
-const LAYER_SIZES = [8, 12, 8, 3];
+const { layerSizes } = CONFIG.network;
+const { preyMaxSpeed, predMaxSpeed, turnSpeed, acceleration } = CONFIG.speed;
+const { preyBaseDrain, predBaseDrain, speedDrain, preyFoodGain, predKillGain, childStartEnergy } = CONFIG.energy;
+const { preyFovDeg, predFovDeg, range } = CONFIG.vision;
+const { eatRadius } = CONFIG.food;
 
 export class Agent {
   constructor(type, x, y, brain = null) {
-    this.type = type; // 'prey' | 'predator'
-    this.x = x;
-    this.y = y;
+    this.type  = type;
+    this.x     = x;
+    this.y     = y;
     this.angle = Math.random() * Math.PI * 2;
     this.speed = 0;
     this.energy = 1.0;
-    this.age = 0;
+    this.age    = 0;
     this.fitness = 0;
-    this.alive = true;
-    this.brain = brain || new NeuralNet(LAYER_SIZES);
-    this.trail = [];
-    this.r = type === 'prey' ? 5 : 7;
-    this.kills = 0;
-    this.foodEaten = 0;
+    this.alive  = true;
+    this.brain  = brain || new NeuralNet(layerSizes);
+    this.trail  = [];
+    this.r      = type === 'prey' ? 5 : 7;
+    this.kills  = 0;
+    this.foodEaten    = 0;
     this.reproductions = 0;
   }
 
-  sense(agents, foods) {
-    // Find nearest 3 of opposite type
-    const others = agents.filter(a => a.alive && a.type !== this.type);
-    others.sort((a, b) => dist(this, a) - dist(this, b));
-    const nearest = others.slice(0, 3);
+  sense(agents, foods, obstacles = []) {
+    const fovRad  = (this.type === 'prey' ? preyFovDeg : predFovDeg) * Math.PI / 180;
+    const halfFov = fovRad / 2;
+
+    const inFov = (target) => {
+      const dx  = target.x - this.x, dy = target.y - this.y;
+      const d   = Math.sqrt(dx*dx + dy*dy);
+      if (d > range) return false;
+      const rel = _normalizeAngle(Math.atan2(dy, dx) - this.angle);
+      if (Math.abs(rel) > halfFov) return false;
+      // Blocage par obstacle (raycasting simplifié)
+      return !_rayBlockedByObstacle(this.x, this.y, target.x, target.y, obstacles);
+    };
+
+    const others = agents
+      .filter(a => a.alive && a.type !== this.type && inFov(a))
+      .sort((a, b) => _dist(this, a) - _dist(this, b))
+      .slice(0, 3);
 
     const inputs = [];
     for (let i = 0; i < 3; i++) {
-      if (nearest[i]) {
-        const d = Math.min(dist(this, nearest[i]) / 300, 1);
-        const ang = angleTo(this, nearest[i]);
-        const relAng = normalizeAngle(ang - this.angle) / Math.PI;
+      if (others[i]) {
+        const d      = Math.min(_dist(this, others[i]) / range, 1);
+        const relAng = _normalizeAngle(Math.atan2(others[i].y - this.y, others[i].x - this.x) - this.angle) / Math.PI;
         inputs.push(d, relAng);
       } else {
         inputs.push(1, 0);
       }
     }
 
-    // Nearest food
-    const nearFood = foods.slice().sort((a, b) => dist(this, a) - dist(this, b))[0];
-    if (nearFood) {
-      const d = Math.min(dist(this, nearFood) / 300, 1);
-      const ang = angleTo(this, nearFood);
-      inputs.push(d, normalizeAngle(ang - this.angle) / Math.PI);
+    const foodsInFov = foods
+      .filter(f => inFov(f))
+      .sort((a, b) => _dist(this, a) - _dist(this, b));
+    const nf = foodsInFov[0];
+    if (nf) {
+      const d      = Math.min(_dist(this, nf) / range, 1);
+      const relAng = _normalizeAngle(Math.atan2(nf.y - this.y, nf.x - this.x) - this.angle) / Math.PI;
+      inputs.push(d, relAng);
     } else {
       inputs.push(1, 0);
     }
 
-    inputs.push(this.energy);
-    inputs.push(this.speed);
+    inputs.push(this.energy, this.speed);
     return inputs;
   }
 
   update(agents, foods, W, H, dt, obstacles = []) {
     if (!this.alive) return null;
 
-    const inputs = this.sense(agents, foods);
-    const out = this.brain.forward(inputs);
+    const inputs = this.sense(agents, foods, obstacles);
+    const out    = this.brain.forward(inputs);
 
-    // Outputs: speed, turn, action
     const targetSpeed = (Math.tanh(out[0]) + 1) / 2;
-    const turn = Math.tanh(out[1]) * 0.12;
+    const turn        = Math.tanh(out[1]) * turnSpeed;
+    const maxSpd      = this.type === 'predator' ? predMaxSpeed : preyMaxSpeed;
 
-    this.speed += (targetSpeed - this.speed) * 0.15;
-    this.speed = Math.min(this.speed, this.type === 'predator' ? 2.2 : 2.8);
+    this.speed += (targetSpeed - this.speed) * acceleration;
+    this.speed  = Math.min(this.speed, maxSpd);
     this.angle += turn;
 
     this.x += Math.cos(this.angle) * this.speed * dt * 60;
     this.y += Math.sin(this.angle) * this.speed * dt * 60;
 
-    // Bords physiques — rebond
-    if (this.x < this.r) { this.x = this.r; this.angle = Math.PI - this.angle; }
+    // Bords physiques
+    if (this.x < this.r)     { this.x = this.r;     this.angle = Math.PI - this.angle; }
     if (this.x > W - this.r) { this.x = W - this.r; this.angle = Math.PI - this.angle; }
-    if (this.y < this.r) { this.y = this.r; this.angle = -this.angle; }
-    if (this.y > H - this.r) { this.y = H - this.r; this.angle = -this.angle; }
+    if (this.y < this.r)     { this.y = this.r;      this.angle = -this.angle; }
+    if (this.y > H - this.r) { this.y = H - this.r;  this.angle = -this.angle; }
 
     // Collision obstacles
     for (const obs of obstacles) {
       const nearX = Math.max(obs.x, Math.min(this.x, obs.x + obs.w));
       const nearY = Math.max(obs.y, Math.min(this.y, obs.y + obs.h));
       const dx = this.x - nearX, dy = this.y - nearY;
-      const d  = Math.sqrt(dx * dx + dy * dy);
+      const d  = Math.sqrt(dx*dx + dy*dy);
       if (d < this.r) {
-        // Repousser hors de l'obstacle
         const nx = dx / (d || 1), ny = dy / (d || 1);
         this.x = nearX + nx * this.r;
         this.y = nearY + ny * this.r;
-        // Rebond : réfléchir l'angle selon la normale
         const dot = Math.cos(this.angle) * nx + Math.sin(this.angle) * ny;
         this.angle -= 2 * dot * Math.atan2(ny, nx);
       }
     }
 
-    // Energy drain (prédateurs plus gourmands)
-    const baseDrain = this.type === 'predator' ? 0.0006 : 0.0003;
-    this.energy -= (baseDrain + this.speed * 0.0002) * dt * 60;
-    this.age += dt;
+    // Drain énergie
+    const baseDrain = this.type === 'predator' ? predBaseDrain : preyBaseDrain;
+    this.energy -= (baseDrain + this.speed * speedDrain) * dt * 60;
+    this.age    += dt;
 
     // Trail
     this.trail.push({ x: this.x, y: this.y });
     if (this.trail.length > 20) this.trail.shift();
 
-    if (this.energy <= 0) {
-      this.alive = false;
-      return null;
-    }
+    if (this.energy <= 0) { this.alive = false; return null; }
 
-    // Eat food
-    let eaten = null;
-    let reproduce = false;
+    let eaten = null, killed = null, reproduce = false;
+
+    // Manger (proie)
     if (this.type === 'prey') {
       for (let i = foods.length - 1; i >= 0; i--) {
-        if (dist(this, foods[i]) < this.r + 4) {
-          this.energy += 0.25;
-          if (this.energy > 1.0) {
-            reproduce = true;
-            this.energy = 1.0;
-            this.reproductions++;
-          }
+        if (_dist(this, foods[i]) < this.r + eatRadius) {
+          this.energy += preyFoodGain;
+          if (this.energy > 1.0) { reproduce = true; this.energy = 1.0; this.reproductions++; }
           this.foodEaten++;
           eaten = i;
           break;
@@ -127,21 +136,15 @@ export class Agent {
       }
     }
 
-    // Hunt
-    let killed = null;
+    // Chasser (prédateur)
     if (this.type === 'predator') {
       for (const prey of agents) {
-        if (prey.alive && prey.type === 'prey' && dist(this, prey) < this.r + prey.r) {
+        if (prey.alive && prey.type === 'prey' && _dist(this, prey) < this.r + prey.r) {
           prey.alive = false;
           this.kills++;
           killed = prey;
-          // Energy can overflow past 1.0 — excess triggers reproduction
-          this.energy += 0.3;
-          if (this.energy > 1.0) {
-            reproduce = true;
-            this.energy = 1.0; // parent redescend à 100 %
-            this.reproductions++;
-          }
+          this.energy += predKillGain;
+          if (this.energy > 1.0) { reproduce = true; this.energy = 1.0; this.reproductions++; }
           break;
         }
       }
@@ -151,26 +154,57 @@ export class Agent {
   }
 
   computeFitness() {
+    const f = this.type === 'prey' ? CONFIG.fitness.prey : CONFIG.fitness.predator;
     if (this.type === 'prey') {
-      this.fitness = this.age * 8 + this.foodEaten * 5 + this.reproductions * 15;
+      this.fitness = this.age * f.ageFactor + this.foodEaten * f.foodFactor + this.reproductions * f.reproductionBonus;
     } else {
-      this.fitness = this.kills * 20 + this.age * 2 + this.reproductions * 25;
+      this.fitness = this.kills * f.killFactor + this.age * f.ageFactor + this.reproductions * f.reproductionBonus;
     }
     return this.fitness;
   }
 }
 
-function dist(a, b) {
+// ── Helpers ─────────────────────────────────────────────────
+function _dist(a, b) {
   const dx = a.x - b.x, dy = a.y - b.y;
-  return Math.sqrt(dx * dx + dy * dy);
+  return Math.sqrt(dx*dx + dy*dy);
 }
 
-function angleTo(from, to) {
-  return Math.atan2(to.y - from.y, to.x - from.x);
-}
-
-function normalizeAngle(a) {
-  while (a > Math.PI) a -= Math.PI * 2;
+function _normalizeAngle(a) {
+  while (a >  Math.PI) a -= Math.PI * 2;
   while (a < -Math.PI) a += Math.PI * 2;
   return a;
+}
+
+// Raycasting : est-ce qu'un segment (ax,ay)→(bx,by) traverse un obstacle ?
+function _rayBlockedByObstacle(ax, ay, bx, by, obstacles) {
+  for (const obs of obstacles) {
+    if (_segmentIntersectsRect(ax, ay, bx, by, obs)) return true;
+  }
+  return false;
+}
+
+function _segmentIntersectsRect(ax, ay, bx, by, r) {
+  // Test rapide AABB sur le segment
+  if (Math.max(ax, bx) < r.x || Math.min(ax, bx) > r.x + r.w) return false;
+  if (Math.max(ay, by) < r.y || Math.min(ay, by) > r.y + r.h) return false;
+  // Les 4 côtés du rectangle
+  const sides = [
+    [r.x,       r.y,       r.x + r.w, r.y      ],
+    [r.x + r.w, r.y,       r.x + r.w, r.y + r.h],
+    [r.x,       r.y + r.h, r.x + r.w, r.y + r.h],
+    [r.x,       r.y,       r.x,       r.y + r.h],
+  ];
+  for (const [cx, cy, dx, dy] of sides) {
+    if (_segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy)) return true;
+  }
+  return false;
+}
+
+function _segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+  const denom = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+  if (Math.abs(denom) < 1e-10) return false;
+  const t = ((cx-ax)*(dy-cy) - (cy-ay)*(dx-cx)) / denom;
+  const u = ((cx-ax)*(by-ay) - (cy-ay)*(bx-ax)) / denom;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 }

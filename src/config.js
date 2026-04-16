@@ -64,6 +64,14 @@ export const CONFIG = {
     tournamentSize:   3,     // Taille du tournoi de sélection
   },
 
+  // ── Reproduction ───────────────────────────────────────
+  reproduction: {
+    survivalThreshold:   1,   // Repas minimum pour être éligible à la reproduction
+    childThreshold:      2,   // Repas pour générer un enfant bonus en fin de génération
+    minPreyPopulation:   8,   // Seuil anti-extinction proies
+    minPredPopulation:   4,   // Seuil anti-extinction prédateurs
+  },
+
   // ── Réseau de neurones ─────────────────────────────────
   network: {
     layerSizes: [14, 20, 12, 3],  // [entrées, cachée1, cachée2, sorties]

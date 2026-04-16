@@ -85,7 +85,7 @@ Entrées (14)  →  Cachée 1 (20)  →  Cachée 2 (12)  →  Sorties (3)
 | # | Action |
 |---|--------|
 | 0 | Vitesse cible (0–1) |
-| 1 | Virage (−180° à +180°) |
+| 1 | Virage par tick (`tanh(x) × turnSpeed`, soit ±`turnSpeed` rad max) |
 | 2 | Réservé (action future) |
 
 **Champ de vision :**
@@ -167,9 +167,10 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 |-----------|--------|-------------|
 | `preyBaseDrain` | `0.0003` | Drain de base des proies au repos |
 | `predBaseDrain` | `0.0006` | Drain de base des prédateurs au repos |
-| `speedDrain` | `0.001` | Drain supplémentaire par unité de vitesse |
+| `speedDrain` | `0.0002` | Drain supplémentaire par unité de vitesse |
 | `preyFoodGain` | `0.25` | Énergie gagnée en mangeant une plante |
 | `predKillGain` | `0.30` | Énergie gagnée en attrapant une proie |
+| `childStartEnergy` | `0.50` | Énergie de départ d'un enfant bonus |
 
 ### Vitesse
 
@@ -186,7 +187,7 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 |-----------|--------|-------------|
 | `preyFovDeg` | `240` | Angle de vision des proies (degrés) |
 | `predFovDeg` | `180` | Angle de vision des prédateurs (degrés) |
-| `range` | `1600` | Portée de vision (pixels) |
+| `range` | `200` | Portée de vision (pixels) |
 
 ### Nourriture
 
@@ -231,6 +232,12 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 | Paramètre | Défaut | Description |
 |-----------|--------|-------------|
 | `layerSizes` | `[14, 20, 12, 3]` | Taille de chaque couche |
+
+### Obstacles
+
+| Paramètre | Défaut | Description |
+|-----------|--------|-------------|
+| `enabled` | `false` | Activer les obstacles au démarrage |
 
 ---
 

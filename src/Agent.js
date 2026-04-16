@@ -3,7 +3,7 @@ import { CONFIG } from './config.js';
 
 const { layerSizes } = CONFIG.network;
 const { preyMaxSpeed, predMaxSpeed, turnSpeed, acceleration } = CONFIG.speed;
-const { preyBaseDrain, predBaseDrain, speedDrain, preyFoodGain, predKillGain, childStartEnergy } = CONFIG.energy;
+const { preyBaseDrain, predBaseDrain, speedDrain, preyFoodGain, predKillGain } = CONFIG.energy;
 const { preyFovDeg, predFovDeg, range } = CONFIG.vision;
 const { eatRadius } = CONFIG.food;
 
@@ -41,9 +41,9 @@ export class Agent {
     };
 
     const others = agents
-      .filter(a => a.alive && a.type !== this.type && inFov(a))
-      .sort((a, b) => _dist(this, a) - _dist(this, b))
-      .slice(0, 3);
+        .filter(a => a.alive && a.type !== this.type && inFov(a))
+        .sort((a, b) => _dist(this, a) - _dist(this, b))
+        .slice(0, 3);
 
     const inputs = [];
     for (let i = 0; i < 3; i++) {
@@ -57,8 +57,8 @@ export class Agent {
     }
 
     const foodsInFov = foods
-      .filter(f => inFov(f))
-      .sort((a, b) => _dist(this, a) - _dist(this, b));
+        .filter(f => inFov(f))
+        .sort((a, b) => _dist(this, a) - _dist(this, b));
     const nf = foodsInFov[0];
     if (nf) {
       const d      = Math.min(_dist(this, nf) / range, 1);
@@ -185,26 +185,24 @@ function _rayBlockedByObstacle(ax, ay, bx, by, obstacles) {
 }
 
 function _segmentIntersectsRect(ax, ay, bx, by, r) {
-  // Test rapide AABB sur le segment
-  if (Math.max(ax, bx) < r.x || Math.min(ax, bx) > r.x + r.w) return false;
-  if (Math.max(ay, by) < r.y || Math.min(ay, by) > r.y + r.h) return false;
-  // Les 4 côtés du rectangle
-  const sides = [
-    [r.x,       r.y,       r.x + r.w, r.y      ],
-    [r.x + r.w, r.y,       r.x + r.w, r.y + r.h],
-    [r.x,       r.y + r.h, r.x + r.w, r.y + r.h],
-    [r.x,       r.y,       r.x,       r.y + r.h],
-  ];
-  for (const [cx, cy, dx, dy] of sides) {
-    if (_segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy)) return true;
-  }
-  return false;
+  if (Math.max(ax,bx) < r.x || Math.min(ax,bx) > r.x+r.w) return false;
+  if (Math.max(ay,by) < r.y || Math.min(ay,by) > r.y+r.h) return false;
+  return _rectSides(r).some(([cx,cy,dx,dy]) => _segsIntersect(ax,ay,bx,by,cx,cy,dx,dy));
 }
 
-function _segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
-  const denom = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
-  if (Math.abs(denom) < 1e-10) return false;
-  const t = ((cx-ax)*(dy-cy) - (cy-ay)*(dx-cx)) / denom;
-  const u = ((cx-ax)*(by-ay) - (cy-ay)*(bx-ax)) / denom;
+function _rectSides(r) {
+  return [
+    [r.x,       r.y,       r.x+r.w, r.y      ],
+    [r.x+r.w,   r.y,       r.x+r.w, r.y+r.h  ],
+    [r.x,       r.y+r.h,   r.x+r.w, r.y+r.h  ],
+    [r.x,       r.y,       r.x,     r.y+r.h  ],
+  ];
+}
+
+function _segsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+  const d = (bx-ax)*(dy-cy) - (by-ay)*(dx-cx);
+  if (Math.abs(d) < 1e-10) return false;
+  const t = ((cx-ax)*(dy-cy) - (cy-ay)*(dx-cx)) / d;
+  const u = ((cx-ax)*(by-ay) - (cy-ay)*(bx-ax)) / d;
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 }

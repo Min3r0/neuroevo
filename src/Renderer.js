@@ -105,21 +105,22 @@ export class Renderer {
 
   _drawVisionCone(ctx, a, sim, obstacles = []) {
     // Proie : 240° centré vers l'avant, prédateur : 180°
-    const fovDeg  = a.type === 'prey' ? CONFIG.vision.preyFovDeg : CONFIG.vision.predFovDeg;
-    const fovRad  = fovDeg * Math.PI / 180;
-    const range   = CONFIG.vision.range;
-    const halfFov = fovRad / 2;
+    const fovDeg    = a.type === 'prey' ? CONFIG.vision.preyFovDeg : CONFIG.vision.predFovDeg;
+    const fovRad    = fovDeg * Math.PI / 180;
+    const range     = CONFIG.vision.range;
+    const drawRange = Math.min(range, 180); // portée affichée plafonnée pour lisibilité
+    const halfFov   = fovRad / 2;
 
     // Cone de vision (arc rempli)
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
-    ctx.arc(a.x, a.y, range, a.angle - halfFov, a.angle + halfFov);
+    ctx.arc(a.x, a.y, drawRange, a.angle - halfFov, a.angle + halfFov);
     ctx.closePath();
     const color = a.type === 'prey' ? '80,220,120' : '220,80,80';
     ctx.fillStyle = `rgba(${color},0.06)`;
     ctx.fill();
-    ctx.strokeStyle = `rgba(${color},0.20)`;
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 5]);
     ctx.stroke();
@@ -128,9 +129,9 @@ export class Renderer {
 
     // Lignes vers les entités dans le champ de vision
     const enemies = sim.agents
-      .filter(e => e.alive && e.type !== a.type)
-      .sort((x, y) => Math.hypot(x.x-a.x,x.y-a.y) - Math.hypot(y.x-a.x,y.y-a.y))
-      .slice(0, 3);
+        .filter(e => e.alive && e.type !== a.type)
+        .sort((x, y) => Math.hypot(x.x-a.x,x.y-a.y) - Math.hypot(y.x-a.x,y.y-a.y))
+        .slice(0, 3);
 
     for (let i = 0; i < enemies.length; i++) {
       const e   = enemies[i];
@@ -140,6 +141,7 @@ export class Renderer {
       const rel = this._normalizeAngle(ang - a.angle);
 
       if (Math.abs(rel) > halfFov || d > range) continue; // hors champ
+      if (_rayBlocked(a.x, a.y, e.x, e.y, obstacles)) continue; // derrière un mur
 
       const alpha = Math.max(0.2, 0.7 - i * 0.2);
       const eColor = a.type === 'prey' ? `rgba(220,80,80,${alpha})` : `rgba(80,220,120,${alpha})`;
@@ -165,8 +167,8 @@ export class Renderer {
     // Nourriture la plus proche dans le champ (proies seulement)
     if (a.type === 'prey' && sim.foods.length > 0) {
       const nearFood = sim.foods
-        .map(f => ({ f, d: Math.hypot(f.x-a.x, f.y-a.y) }))
-        .sort((x, y) => x.d - y.d)[0];
+          .map(f => ({ f, d: Math.hypot(f.x-a.x, f.y-a.y) }))
+          .sort((x, y) => x.d - y.d)[0];
 
       if (nearFood) {
         const { f, d } = nearFood;
@@ -207,8 +209,8 @@ export class Renderer {
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(
-      a.x + Math.cos(a.angle) * (a.r + 5),
-      a.y + Math.sin(a.angle) * (a.r + 5)
+        a.x + Math.cos(a.angle) * (a.r + 5),
+        a.y + Math.sin(a.angle) * (a.r + 5)
     );
     ctx.strokeStyle = light ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)';
     ctx.lineWidth = 1.5;

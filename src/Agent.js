@@ -9,11 +9,11 @@ const { eatRadius } = CONFIG.food;
 
 export class Agent {
   constructor(type, x, y, brain = null) {
-    this.type  = type;
-    this.x     = x;
-    this.y     = y;
-    this.angle = Math.random() * Math.PI * 2;
-    this.speed = 0;
+    this.type   = type;
+    this.x      = x;
+    this.y      = y;
+    this.angle  = Math.random() * Math.PI * 2;
+    this.speed  = 0;
     this.energy = 1.0;
     this.age    = 0;
     this.fitness = 0;
@@ -21,9 +21,11 @@ export class Agent {
     this.brain  = brain || new NeuralNet(layerSizes);
     this.trail  = [];
     this.r      = type === 'prey' ? 5 : 7;
-    this.kills  = 0;
-    this.foodEaten    = 0;
+    this.kills         = 0;
+    this.foodEaten     = 0;
     this.reproductions = 0;
+    this.mealCount     = 0;  // repas mangés cette génération
+    this._W = 700; this._H = 500; // mis à jour au premier update()
   }
 
   sense(agents, foods, obstacles = []) {
@@ -31,34 +33,35 @@ export class Agent {
     const halfFov = fovRad / 2;
 
     const inFov = (target) => {
-      const dx  = target.x - this.x, dy = target.y - this.y;
-      const d   = Math.sqrt(dx*dx + dy*dy);
+      const dx = target.x - this.x, dy = target.y - this.y;
+      const d  = Math.sqrt(dx*dx + dy*dy);
       if (d > range) return false;
       const rel = _normalizeAngle(Math.atan2(dy, dx) - this.angle);
       if (Math.abs(rel) > halfFov) return false;
-      // Blocage par obstacle (raycasting simplifié)
       return !_rayBlockedByObstacle(this.x, this.y, target.x, target.y, obstacles);
     };
 
-    const others = agents
-        .filter(a => a.alive && a.type !== this.type && inFov(a))
-        .sort((a, b) => _dist(this, a) - _dist(this, b))
-        .slice(0, 3);
+    // ── 0-5 : 3 ennemis (distance + angle relatif) ────────────
+    const enemies = agents
+      .filter(a => a.alive && a.type !== this.type && inFov(a))
+      .sort((a, b) => _dist(this, a) - _dist(this, b))
+      .slice(0, 3);
 
     const inputs = [];
     for (let i = 0; i < 3; i++) {
-      if (others[i]) {
-        const d      = Math.min(_dist(this, others[i]) / range, 1);
-        const relAng = _normalizeAngle(Math.atan2(others[i].y - this.y, others[i].x - this.x) - this.angle) / Math.PI;
+      if (enemies[i]) {
+        const d      = Math.min(_dist(this, enemies[i]) / range, 1);
+        const relAng = _normalizeAngle(Math.atan2(enemies[i].y - this.y, enemies[i].x - this.x) - this.angle) / Math.PI;
         inputs.push(d, relAng);
       } else {
         inputs.push(1, 0);
       }
     }
 
+    // ── 6-7 : nourriture la plus proche dans le champ ─────────
     const foodsInFov = foods
-        .filter(f => inFov(f))
-        .sort((a, b) => _dist(this, a) - _dist(this, b));
+      .filter(f => inFov(f))
+      .sort((a, b) => _dist(this, a) - _dist(this, b));
     const nf = foodsInFov[0];
     if (nf) {
       const d      = Math.min(_dist(this, nf) / range, 1);
@@ -68,12 +71,27 @@ export class Agent {
       inputs.push(1, 0);
     }
 
-    inputs.push(this.energy, this.speed);
-    return inputs;
+    // ── 8-10 : énergie des 3 ennemis visibles (0 si absent) ───
+    for (let i = 0; i < 3; i++) {
+      inputs.push(enemies[i] ? enemies[i].energy : 0);
+    }
+
+    // ── 11-12 : mur le plus proche (distance + angle relatif) ─
+    const { wallDist, wallAngle } = _nearestWall(this.x, this.y, this.angle, this._W, this._H);
+    inputs.push(wallDist, wallAngle);
+
+    // ── 13 : densité d'alliés proches (rayon 80px, normalisé) ─
+    const allyCount = agents.filter(a =>
+      a.alive && a !== this && a.type === this.type && _dist(this, a) < 80
+    ).length;
+    inputs.push(Math.min(allyCount / 5, 1));
+
+    return inputs; // 14 valeurs au total
   }
 
   update(agents, foods, W, H, dt, obstacles = []) {
     if (!this.alive) return null;
+    this._W = W; this._H = H;
 
     const inputs = this.sense(agents, foods, obstacles);
     const out    = this.brain.forward(inputs);
@@ -121,15 +139,16 @@ export class Agent {
 
     if (this.energy <= 0) { this.alive = false; return null; }
 
-    let eaten = null, killed = null, reproduce = false;
+    let eaten = null, killed = null;
 
     // Manger (proie)
     if (this.type === 'prey') {
       for (let i = foods.length - 1; i >= 0; i--) {
         if (_dist(this, foods[i]) < this.r + eatRadius) {
           this.energy += preyFoodGain;
-          if (this.energy > 1.0) { reproduce = true; this.energy = 1.0; this.reproductions++; }
+          this.energy  = Math.min(this.energy, 1.0);
           this.foodEaten++;
+          this.mealCount++;
           eaten = i;
           break;
         }
@@ -143,28 +162,52 @@ export class Agent {
           prey.alive = false;
           this.kills++;
           killed = prey;
-          this.energy += predKillGain;
-          if (this.energy > 1.0) { reproduce = true; this.energy = 1.0; this.reproductions++; }
+          this.energy  = Math.min(this.energy + predKillGain, 1.0);
+          this.mealCount++;
           break;
         }
       }
     }
 
-    return { eaten, killed, reproduce };
+    return { eaten, killed };
   }
 
   computeFitness() {
     const f = this.type === 'prey' ? CONFIG.fitness.prey : CONFIG.fitness.predator;
+    const { survivalThreshold } = CONFIG.reproduction;
+    const survivalBonus = this.mealCount >= survivalThreshold ? 20 : 0; // bonus survie
     if (this.type === 'prey') {
-      this.fitness = this.age * f.ageFactor + this.foodEaten * f.foodFactor + this.reproductions * f.reproductionBonus;
+      this.fitness = this.age * f.ageFactor
+        + this.foodEaten * f.foodFactor
+        + this.reproductions * f.reproductionBonus
+        + survivalBonus;
     } else {
-      this.fitness = this.kills * f.killFactor + this.age * f.ageFactor + this.reproductions * f.reproductionBonus;
+      this.fitness = this.kills * f.killFactor
+        + this.age * f.ageFactor
+        + this.reproductions * f.reproductionBonus
+        + survivalBonus;
     }
     return this.fitness;
   }
 }
 
-// ── Helpers ─────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────
+
+function _nearestWall(x, y, angle, W, H) {
+  const walls = [
+    { dist: x,     ang: Math.PI    }, // gauche
+    { dist: W - x, ang: 0          }, // droite
+    { dist: y,     ang: -Math.PI/2 }, // haut
+    { dist: H - y, ang:  Math.PI/2 }, // bas
+  ];
+  const nearest = walls.reduce((a, b) => a.dist < b.dist ? a : b);
+  const maxDist = Math.min(W, H) / 2;
+  return {
+    wallDist:  Math.min(nearest.dist / maxDist, 1),
+    wallAngle: _normalizeAngle(nearest.ang - angle) / Math.PI,
+  };
+}
+
 function _dist(a, b) {
   const dx = a.x - b.x, dy = a.y - b.y;
   return Math.sqrt(dx*dx + dy*dy);
@@ -176,7 +219,6 @@ function _normalizeAngle(a) {
   return a;
 }
 
-// Raycasting : est-ce qu'un segment (ax,ay)→(bx,by) traverse un obstacle ?
 function _rayBlockedByObstacle(ax, ay, bx, by, obstacles) {
   for (const obs of obstacles) {
     if (_segmentIntersectsRect(ax, ay, bx, by, obs)) return true;
@@ -192,10 +234,10 @@ function _segmentIntersectsRect(ax, ay, bx, by, r) {
 
 function _rectSides(r) {
   return [
-    [r.x,       r.y,       r.x+r.w, r.y      ],
-    [r.x+r.w,   r.y,       r.x+r.w, r.y+r.h  ],
-    [r.x,       r.y+r.h,   r.x+r.w, r.y+r.h  ],
-    [r.x,       r.y,       r.x,     r.y+r.h  ],
+    [r.x,     r.y,     r.x+r.w, r.y    ],
+    [r.x+r.w, r.y,     r.x+r.w, r.y+r.h],
+    [r.x,     r.y+r.h, r.x+r.w, r.y+r.h],
+    [r.x,     r.y,     r.x,     r.y+r.h],
   ];
 }
 

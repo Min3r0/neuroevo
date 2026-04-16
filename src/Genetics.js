@@ -10,7 +10,14 @@ export class Genetics {
   }
 
   evolve(agents, type, popSize, W, H) {
-    const pool = agents.filter(a => a.type === type);
+    const { survivalThreshold } = CONFIG.reproduction;
+
+    // Seuls les agents ayant mangé assez sont éligibles à la reproduction
+    const survivors = agents.filter(a => a.type === type && a.mealCount >= survivalThreshold);
+    // Les autres participent quand même au pool si pas assez de survivants
+    const fallback  = agents.filter(a => a.type === type && a.mealCount < survivalThreshold);
+    const pool      = survivors.length >= 2 ? survivors : [...survivors, ...fallback];
+
     pool.forEach(a => a.computeFitness());
     pool.sort((a, b) => b.fitness - a.fitness);
 

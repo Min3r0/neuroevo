@@ -23,14 +23,14 @@ export const CONFIG = {
     // Drain de base par tick (× dt × 60)
     preyBaseDrain:  0.0003,   // Proie au repos
     predBaseDrain:  0.0006,   // Prédateur au repos (plus gourmand)
-    speedDrain:     0.0010,   // Drain supplémentaire par unité de vitesse (commun)
+    speedDrain:     0.0002,   // Drain supplémentaire par unité de vitesse (commun)
 
     // Gain d'énergie
     preyFoodGain:   0.25,     // Énergie gagnée en mangeant une plante
     predKillGain:   0.30,     // Énergie gagnée en attrapant une proie
 
     // Reproduction (déclenchée si énergie dépasse 1.0 après gain)
-    childStartEnergy: 0.69,   // Énergie de départ d'un enfant né en direct
+    childStartEnergy: 0.50,   // Énergie de départ d'un enfant né en direct
   },
 
   // ── Vitesse de déplacement ─────────────────────────────
@@ -45,7 +45,7 @@ export const CONFIG = {
   vision: {
     preyFovDeg:  240,   // Angle du champ de vision des proies (degrés)
     predFovDeg:  180,   // Angle du champ de vision des prédateurs (degrés)
-    range:       1600,   // Portée maximale de la vision (pixels)
+    range:       200,   // Portée maximale de la vision (pixels)
   },
 
   // ── Nourriture ─────────────────────────────────────────
@@ -61,14 +61,12 @@ export const CONFIG = {
     eliteRatio:      0.20,   // Part de la population sélectionnée (top %)
     mutationRate:    0.05,   // Probabilité de mutation par poids
     mutationStd:     0.15,   // Amplitude du bruit gaussien
-    liveMutationRate: 0.08,  // Taux de mutation lors d'une reproduction en direct
-    liveMutationStd:  0.12,  // Amplitude lors d'une reproduction en direct
     tournamentSize:   3,     // Taille du tournoi de sélection
   },
 
   // ── Réseau de neurones ─────────────────────────────────
   network: {
-    layerSizes: [8, 12, 8, 3],   // [entrées, cachée1, cachée2, sorties]
+    layerSizes: [14, 20, 12, 3],  // [entrées, cachée1, cachée2, sorties]
   },
 
   // ── Score de fitness ───────────────────────────────────

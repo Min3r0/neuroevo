@@ -9,8 +9,6 @@ export const CONFIG = {
   population: {
     preyCount:    40,   // Nombre de proies par génération
     predCount:    15,   // Nombre de prédateurs par génération
-    maxPrey:      80,   // Plafond proies (reproduction en direct)
-    maxPredators: 40,   // Plafond prédateurs (reproduction en direct)
   },
 
   // ── Durée & temps ──────────────────────────────────────
@@ -28,9 +26,6 @@ export const CONFIG = {
     // Gain d'énergie
     preyFoodGain:   0.25,     // Énergie gagnée en mangeant une plante
     predKillGain:   0.30,     // Énergie gagnée en attrapant une proie
-
-    // Reproduction (déclenchée si énergie dépasse 1.0 après gain)
-    childStartEnergy: 0.50,   // Énergie de départ d'un enfant né en direct
   },
 
   // ── Vitesse de déplacement ─────────────────────────────

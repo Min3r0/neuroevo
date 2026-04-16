@@ -14,8 +14,6 @@ export class Simulation {
       eliteRatio:       cfg.eliteRatio   ?? CONFIG.genetics.eliteRatio,
       mutationRate:     cfg.mutationRate ?? CONFIG.genetics.mutationRate,
       mutationStd:      cfg.mutationStd  ?? CONFIG.genetics.mutationStd,
-      maxPredators:     cfg.maxPredators ?? CONFIG.population.maxPredators,
-      maxPrey:          cfg.maxPrey      ?? CONFIG.population.maxPrey,
       obstaclesEnabled: cfg.obstaclesEnabled ?? CONFIG.obstacles.enabled,
       W: cfg.W ?? 700,
       H: cfg.H ?? 500,

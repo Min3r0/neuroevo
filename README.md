@@ -152,8 +152,6 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 |-----------|--------|-------------|
 | `preyCount` | `40` | Nombre de proies par génération |
 | `predCount` | `15` | Nombre de prédateurs par génération |
-| `maxPrey` | `80` | Plafond proies |
-| `maxPredators` | `40` | Plafond prédateurs |
 
 ### Durée
 
@@ -170,7 +168,6 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 | `speedDrain` | `0.0002` | Drain supplémentaire par unité de vitesse |
 | `preyFoodGain` | `0.25` | Énergie gagnée en mangeant une plante |
 | `predKillGain` | `0.30` | Énergie gagnée en attrapant une proie |
-| `childStartEnergy` | `0.50` | Énergie de départ d'un enfant bonus |
 
 ### Vitesse
 

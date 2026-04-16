@@ -1,71 +1,56 @@
+// Réseau feed-forward fully-connected.
+// Activation : tanh sur les couches cachées, linéaire sur la couche de sortie.
+// (Le mapping des sorties — vitesse [0,1], virage borné — est fait côté Agent.)
+
 export class NeuralNet {
   constructor(layerSizes) {
     this.layerSizes = layerSizes;
     this.weights = [];
-    this.biases = [];
-    for (let i = 0; i < layerSizes.length - 1; i++) {
-      const w = [];
-      for (let j = 0; j < layerSizes[i] * layerSizes[i + 1]; j++) {
-        w.push((Math.random() * 2 - 1) * 0.5);
-      }
+    this.biases  = [];
+    for (let l = 0; l < layerSizes.length - 1; l++) {
+      const inN = layerSizes[l], outN = layerSizes[l + 1];
+      const w = new Array(inN * outN);
+      for (let i = 0; i < w.length; i++) w[i] = (Math.random() * 2 - 1) * 0.5;
       this.weights.push(w);
-      const b = [];
-      for (let j = 0; j < layerSizes[i + 1]; j++) b.push(0);
-      this.biases.push(b);
+      this.biases.push(new Array(outN).fill(0));
     }
   }
 
   forward(inputs) {
-    let current = [...inputs];
+    let cur = inputs.slice();
     for (let l = 0; l < this.weights.length; l++) {
-      const next = [];
-      const inSize = this.layerSizes[l];
-      const outSize = this.layerSizes[l + 1];
-      for (let o = 0; o < outSize; o++) {
-        let sum = this.biases[l][o];
-        for (let i = 0; i < inSize; i++) sum += current[i] * this.weights[l][i * outSize + o];
-        next.push(l < this.weights.length - 1 ? Math.tanh(sum) : sum);
+      const inN = this.layerSizes[l], outN = this.layerSizes[l + 1];
+      const isLast = l === this.weights.length - 1;
+      const next = new Array(outN);
+      for (let o = 0; o < outN; o++) {
+        let s = this.biases[l][o];
+        for (let i = 0; i < inN; i++) s += cur[i] * this.weights[l][i * outN + o];
+        next[o] = isLast ? s : Math.tanh(s);
       }
-      current = next;
+      cur = next;
     }
-    return current;
+    return cur;
   }
 
   clone() {
     const n = new NeuralNet(this.layerSizes);
-    n.weights = this.weights.map(w => [...w]);
-    n.biases = this.biases.map(b => [...b]);
+    n.weights = this.weights.map(w => w.slice());
+    n.biases  = this.biases.map(b => b.slice());
     return n;
   }
 
-  static crossover(a, b) {
-    const child = a.clone();
-    for (let l = 0; l < child.weights.length; l++) {
-      for (let i = 0; i < child.weights[l].length; i++) {
-        if (Math.random() < 0.5) child.weights[l][i] = b.weights[l][i];
-      }
-      for (let i = 0; i < child.biases[l].length; i++) {
-        if (Math.random() < 0.5) child.biases[l][i] = b.biases[l][i];
-      }
-    }
-    return child;
-  }
-
-  mutate(rate = 0.05, std = 0.15) {
+  mutate(rate, std) {
     for (let l = 0; l < this.weights.length; l++) {
-      for (let i = 0; i < this.weights[l].length; i++) {
-        if (Math.random() < rate) this.weights[l][i] += this._gaussian() * std;
-      }
-      for (let i = 0; i < this.biases[l].length; i++) {
-        if (Math.random() < rate) this.biases[l][i] += this._gaussian() * std;
-      }
+      const w = this.weights[l], b = this.biases[l];
+      for (let i = 0; i < w.length; i++) if (Math.random() < rate) w[i] += gauss() * std;
+      for (let i = 0; i < b.length; i++) if (Math.random() < rate) b[i] += gauss() * std;
     }
   }
+}
 
-  _gaussian() {
-    let u = 0, v = 0;
-    while (u === 0) u = Math.random();
-    while (v === 0) v = Math.random();
-    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  }
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }

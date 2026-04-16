@@ -1,94 +1,80 @@
 // ═══════════════════════════════════════════════════════════
-//  NeuroEvo — Fichier de configuration central
-//  Modifiez ces valeurs pour ajuster la simulation
+//  NeuroEvo — Configuration centrale
+//  Modifie ces valeurs puis F5 pour appliquer.
 // ═══════════════════════════════════════════════════════════
 
 export const CONFIG = {
 
   // ── Population ─────────────────────────────────────────
   population: {
-    preyCount:    40,   // Nombre de proies par génération
-    predCount:    15,   // Nombre de prédateurs par génération
+    preyCount: 40,   // Nombre de proies au démarrage / par génération de base
+    predCount: 15,   // Nombre de prédateurs au démarrage / par génération de base
   },
 
-  // ── Durée & temps ──────────────────────────────────────
+  // ── Durée d'une génération ─────────────────────────────
   time: {
-    genDuration:  25,   // Durée d'une génération (secondes simulées)
+    genDuration: 25,   // secondes simulées
   },
 
   // ── Énergie ────────────────────────────────────────────
   energy: {
-    // Drain de base par tick (× dt × 60)
-    preyBaseDrain:  0.0003,   // Proie au repos
-    predBaseDrain:  0.0006,   // Prédateur au repos (plus gourmand)
-    speedDrain:     0.0002,   // Drain supplémentaire par unité de vitesse (commun)
-
-    // Gain d'énergie
-    preyFoodGain:   0.25,     // Énergie gagnée en mangeant une plante
-    predKillGain:   0.30,     // Énergie gagnée en attrapant une proie
+    preyBaseDrain: 0.0003,   // drain de base par tick (× dt × 60), proie au repos
+    predBaseDrain: 0.0006,   // drain de base par tick, prédateur au repos
+    speedDrain:    0.0002,   // drain additionnel par unité de vitesse
+    preyFoodGain:  0.25,     // énergie gagnée en mangeant une plante
+    predKillGain:  0.30,     // énergie gagnée en attrapant une proie
   },
 
-  // ── Vitesse de déplacement ─────────────────────────────
+  // ── Vitesse ────────────────────────────────────────────
   speed: {
-    preyMaxSpeed:  2.8,   // Vitesse max des proies
-    predMaxSpeed:  2.2,   // Vitesse max des prédateurs
-    turnSpeed:     0.12,  // Amplitude de virage par tick
-    acceleration:  0.15,  // Lissage de l'accélération (0 = lent, 1 = instantané)
+    preyMaxSpeed: 2.8,
+    predMaxSpeed: 2.2,
+    turnSpeed:    0.12,   // amplitude max de virage par tick (rad)
+    acceleration: 0.15,   // lissage (0 = lent, 1 = instantané)
   },
 
   // ── Champ de vision ────────────────────────────────────
   vision: {
-    preyFovDeg:  240,   // Angle du champ de vision des proies (degrés)
-    predFovDeg:  180,   // Angle du champ de vision des prédateurs (degrés)
-    range:       200,   // Portée maximale de la vision (pixels)
+    preyFovDeg: 240,
+    predFovDeg: 180,
+    range:      200,   // pixels
   },
 
   // ── Nourriture ─────────────────────────────────────────
   food: {
-    spawnRate:    1.2,   // Plantes spawned par seconde
-    maxOnMap:     80,    // Nombre max de plantes simultanées
-    initialCount: 30,    // Plantes présentes au départ de chaque génération
-    eatRadius:    4,     // Distance pour manger (pixels)
-  },
-
-  // ── Algorithme génétique ───────────────────────────────
-  genetics: {
-    eliteRatio:      0.20,   // Part de la population sélectionnée (top %)
-    mutationRate:    0.05,   // Probabilité de mutation par poids
-    mutationStd:     0.15,   // Amplitude du bruit gaussien
-    tournamentSize:   3,     // Taille du tournoi de sélection
+    spawnRate:    1.2,   // plantes par seconde
+    maxOnMap:     80,
+    initialCount: 30,
+    eatRadius:    4,     // rayon de capture (pixels)
   },
 
   // ── Reproduction ───────────────────────────────────────
   reproduction: {
-    survivalThreshold:   1,   // Repas minimum pour être éligible à la reproduction
-    childThreshold:      2,   // Repas pour générer un enfant bonus en fin de génération
-    minPreyPopulation:   8,   // Seuil anti-extinction proies
-    minPredPopulation:   4,   // Seuil anti-extinction prédateurs
+    survivalThreshold: 2,   // mealCount minimum pour cloner ; aussi seuil du bonus survie
+    minPreyPopulation: 8,   // anti-extinction proies
+    minPredPopulation: 4,   // anti-extinction prédateurs
+  },
+
+  // ── Algorithme génétique ───────────────────────────────
+  genetics: {
+    mutationRate: 0.05,   // probabilité de mutation par poids
+    mutationStd:  0.15,   // amplitude du bruit gaussien
   },
 
   // ── Réseau de neurones ─────────────────────────────────
   network: {
-    layerSizes: [14, 20, 12, 3],  // [entrées, cachée1, cachée2, sorties]
+    layerSizes: [14, 20, 12, 3],   // [entrées, cachée1, cachée2, sorties]
   },
 
   // ── Score de fitness ───────────────────────────────────
   fitness: {
-    prey: {
-      ageFactor:          8,    // Points par seconde de survie
-      foodFactor:         5,    // Points par plante mangée
-      reproductionBonus:  15,   // Points par reproduction réussie
-    },
-    predator: {
-      ageFactor:          2,    // Points par seconde de survie
-      killFactor:         20,   // Points par proie capturée
-      reproductionBonus:  25,   // Points par reproduction réussie
-    },
+    prey:     { ageFactor: 8, foodFactor: 5, reproductionBonus: 15 },
+    predator: { ageFactor: 2, killFactor: 20, reproductionBonus: 25 },
   },
 
   // ── Obstacles ──────────────────────────────────────────
   obstacles: {
-    enabled: true,    // Activer les obstacles au démarrage
+    enabled: true,   // activés au démarrage
   },
 
 };

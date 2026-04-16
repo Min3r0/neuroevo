@@ -31,7 +31,7 @@ document.getElementById('speed-slider').addEventListener('input', e => {
   document.getElementById('speed-label').textContent = `×${speed}`;
 });
 
-['prey-count','pred-count','mutation-rate','elite-ratio'].forEach(id => {
+['prey-count','pred-count','mutation-rate','mutation-std'].forEach(id => {
   const el  = document.getElementById(id);
   const lbl = document.getElementById(id + '-val');
   if (!el) return;
@@ -39,10 +39,10 @@ document.getElementById('speed-slider').addEventListener('input', e => {
 });
 
 function applyParams() {
-  sim.cfg.preyCount         = +document.getElementById('prey-count').value;
-  sim.cfg.predCount         = +document.getElementById('pred-count').value;
-  sim.genetics.mutationRate = +document.getElementById('mutation-rate').value;
-  sim.genetics.eliteRatio   = +document.getElementById('elite-ratio').value;
+  sim.cfg.preyCount    = +document.getElementById('prey-count').value;
+  sim.cfg.predCount    = +document.getElementById('pred-count').value;
+  sim.cfg.mutationRate = +document.getElementById('mutation-rate').value;
+  sim.cfg.mutationStd  = +document.getElementById('mutation-std').value;
 }
 
 // Obstacles toggle

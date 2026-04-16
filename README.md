@@ -55,7 +55,7 @@ La simulation tourne dans une arène 2D à bords physiques (les entités rebondi
 - Les **proies** 🟢 cherchent de la nourriture et fuient les prédateurs
 - Les **prédateurs** 🔴 chassent les proies pour regagner de l'énergie
 - La **nourriture** 🟡 apparaît aléatoirement à un rythme configurable
-- Des **obstacles** ⬛ optionnels créent des couloirs et zones d'embuscade
+- Des **obstacles** ⬛ (activés par défaut) créent des couloirs et zones d'embuscade — la nourriture ne peut pas y apparaître
 
 Chaque agent a une barre d'énergie qui diminue en permanence (plus vite à grande vitesse). Sans énergie → mort. La génération dure un temps fixe, puis le cycle génétique se déclenche.
 
@@ -234,7 +234,7 @@ Toutes les valeurs sont centralisées dans ce fichier. F5 suffit pour les appliq
 
 | Paramètre | Défaut | Description |
 |-----------|--------|-------------|
-| `enabled` | `false` | Activer les obstacles au démarrage |
+| `enabled` | `true` | Activer les obstacles au démarrage |
 
 ---
 

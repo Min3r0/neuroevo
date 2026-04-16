@@ -27,7 +27,25 @@ export class Simulation {
     this.selectedAgent = null;
     this.birthEvents   = [];
     this.totalBirths   = 0;
+    this.obstacles     = this.cfg.obstaclesEnabled ? this._generateObstacles() : [];
     this._init();
+  }
+
+  _isInsideObstacle(x, y) {
+    for (const obs of this.obstacles) {
+      if (x >= obs.x && x <= obs.x + obs.w && y >= obs.y && y <= obs.y + obs.h) return true;
+    }
+    return false;
+  }
+
+  _randomFreePos(maxAttempts = 20) {
+    const { W, H } = this.cfg;
+    for (let i = 0; i < maxAttempts; i++) {
+      const x = Math.random() * W;
+      const y = Math.random() * H;
+      if (!this._isInsideObstacle(x, y)) return { x, y };
+    }
+    return null;
   }
 
   _init() {
@@ -38,8 +56,10 @@ export class Simulation {
     for (let i = 0; i < predCount; i++)
       this.agents.push(new Agent('predator', Math.random() * W, Math.random() * H));
     this.foods = [];
-    for (let i = 0; i < CONFIG.food.initialCount; i++)
-      this.foods.push({ x: Math.random() * W, y: Math.random() * H });
+    for (let i = 0; i < CONFIG.food.initialCount; i++) {
+      const pos = this._randomFreePos();
+      if (pos) this.foods.push(pos);
+    }
     this.time        = 0;
     this.birthEvents = [];
   }
@@ -67,10 +87,13 @@ export class Simulation {
   tick(dt) {
     const { W, H, genDuration, foodSpawnRate } = this.cfg;
 
-    // Spawn nourriture
+    // Spawn nourriture (jamais à l'intérieur d'un obstacle)
     if (Math.random() < foodSpawnRate * dt) {
-      this.foods.push({ x: Math.random() * W, y: Math.random() * H });
-      if (this.foods.length > CONFIG.food.maxOnMap) this.foods.shift();
+      const pos = this._randomFreePos();
+      if (pos) {
+        this.foods.push(pos);
+        if (this.foods.length > CONFIG.food.maxOnMap) this.foods.shift();
+      }
     }
 
     for (const agent of this.agents) {
@@ -150,8 +173,10 @@ export class Simulation {
     this.generation++;
     this.agents = newAgents;
     this.foods  = [];
-    for (let i = 0; i < CONFIG.food.initialCount; i++)
-      this.foods.push({ x: Math.random() * W, y: Math.random() * H });
+    for (let i = 0; i < CONFIG.food.initialCount; i++) {
+      const pos = this._randomFreePos();
+      if (pos) this.foods.push(pos);
+    }
     this.time          = 0;
     this.selectedAgent = null;
     this.birthEvents   = [];
@@ -161,12 +186,11 @@ export class Simulation {
   setObstacles(enabled) {
     this.cfg.obstaclesEnabled = enabled;
     this.obstacles = enabled ? this._generateObstacles() : [];
+    // Retirer la nourriture qui se retrouverait piégée dans un nouvel obstacle
+    if (enabled) this.foods = this.foods.filter(f => !this._isInsideObstacle(f.x, f.y));
   }
 
   get preyAlive()  { return this.agents.filter(a => a.type === 'prey'     && a.alive).length; }
   get predAlive()  { return this.agents.filter(a => a.type === 'predator' && a.alive).length; }
   get progress()   { return Math.min(this.time / this.cfg.genDuration, 1); }
 }
-
-// Initialiser obstacles (appelé après construction)
-Simulation.prototype.obstacles = [];

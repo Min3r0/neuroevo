@@ -88,7 +88,7 @@ export const CONFIG = {
 
   // ── Obstacles ──────────────────────────────────────────
   obstacles: {
-    enabled: false,   // Activer les obstacles au démarrage
+    enabled: true,    // Activer les obstacles au démarrage
   },
 
 };
